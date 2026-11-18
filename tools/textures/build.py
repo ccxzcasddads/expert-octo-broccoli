@@ -38,6 +38,8 @@ BOLD_ROWS = [
     "АБВГДЕЁЖЗИЙКЛМНО", "ПРСТУФХЦЧШЩЪЫЬЭЮ", "ЯІЇЄҐABCDEFGHIJK", "LMNOPQRSTUVWXYZ0", "123456789.,:;!?-",
     "+=/\\()[]<>«»\"'%#", "*_|°№~",
 ]
+# Белый цвет в записи ARGB со знаком: 0xFFFFFFFF.
+OPAQUE_WHITE = -1
 
 
 def write_json(path, data):
@@ -62,7 +64,9 @@ def items(folder, table, tinted):
         model = {"type": "minecraft:model", "model": f"{NAMESPACE}:item/{folder}/{name}"}
         if tinted:
             # Окраска спрайта цветом кожаной брони: поля color и rainbow в слоях эффектов.
-            model["tints"] = [{"type": "minecraft:dye", "default": 16777215}]
+            # Цвет по умолчанию задан вместе с альфа-каналом (-1 = 0xFFFFFFFF): значение без него
+            # клиент понимает как полностью прозрачное, и неокрашенный спрайт в мире не виден.
+            model["tints"] = [{"type": "minecraft:dye", "default": OPAQUE_WHITE}]
         write_json(ASSETS / f"items/{folder}/{name}.json", {"model": model})
 
 

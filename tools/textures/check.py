@@ -96,6 +96,13 @@ for key, category in config["menu"]["main"]["categories"].items():
     if category.get("background") not in glyphs:
         problems.append(f"config.yml → menu.main.categories.{key}: фона нет в шрифте applecosmetic:menu")
 
+# Цвет окраски по умолчанию без альфа-канала клиент рисует полностью прозрачным.
+for path in sorted((ASSETS / "items").rglob("*.json")):
+    model = json.loads(path.read_text(encoding="utf-8")).get("model", {})
+    for tint in model.get("tints", []):
+        if "default" in tint and (int(tint["default"]) & 0xFFFFFFFF) >> 24 != 0xFF:
+            problems.append(f"{path.relative_to(ASSETS)}: цвет окраски по умолчанию прозрачный — запустите build.py")
+
 for problem in problems:
     print("ОШИБКА:", problem)
 print(f"эффектов: {total}, спрайтов: {len(fx.SPRITES)}, иконок: {len(icons.ICONS)}, движений: {len(ANIMATIONS)}, "
