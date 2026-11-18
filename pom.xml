@@ -6,7 +6,7 @@
 
     <groupId>ru.applecosmetic</groupId>
     <artifactId>AppleCosmetic</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <packaging>jar</packaging>
 
     <name>AppleCosmetic</name>

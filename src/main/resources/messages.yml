@@ -5,7 +5,7 @@
 # {prefix} — приставка, {name} — название косметики.
 # Чтобы отключить сообщение, оставьте пустую строку: "".
 
-prefix: "<gradient:#ff5f6d:#ffc371><bold>AppleCosmetic</bold></gradient> <dark_gray>»</dark_gray> "
+prefix: "<gradient:#fb2200:#c81a1a><bold>AppleCosmetic</bold></gradient> <dark_gray>»</dark_gray> "
 
 # Подставляется вместо названия, когда ничего не выбрано.
 none: "<gray>ничего"

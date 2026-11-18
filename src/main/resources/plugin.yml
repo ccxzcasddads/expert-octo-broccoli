@@ -2,7 +2,7 @@ name: AppleCosmetic
 version: '${project.version}'
 main: ru.applecosmetic.AppleCosmeticPlugin
 api-version: '1.21.11'
-description: Косметика — облики мечей, кирок и тотемов, шляпы и эффекты
+description: Косметика — облики мечей, кирок и тотемов, шляпы и эффекты из спрайтов
 softdepend: [ItemsAdder, Nexo, Oraxen, CraftEngine, BetterModel]
 
 commands:
