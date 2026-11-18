@@ -4,200 +4,248 @@
 # Эффект проигрывается на месте гибели противника, которого убил игрок.
 # Кого считать противником (игроков, мобов), задаётся в config.yml → effects.kill.
 #
+# Эффекты собраны из спрайтов — картинок из ресурспака плагина (набор applecosmetic_raw
+# для ItemsAdder). Все встроенные спрайты с названиями — на листе docs/preview/sprites.png.
+#
 # Поля эффекта:
 #   name        — название в меню
 #   icon        — иконка в меню (форматы предметов описаны в config.yml)
 #   lore        — описание в меню
 #   permission  — право доступа; по умолчанию applecosmetic.kill.<id>,
 #                 пустая строка "" делает эффект доступным всем
-#   sounds      — звуки: { name: ключ, volume: громкость, pitch: высота }
-#   lightning   — true: удар молнии (только вспышка, без урона и огня)
-#   firework    — фейерверк без урона: { type, colors, fade, flicker, trail }
-#                 type: BALL, BALL_LARGE, STAR, BURST, CREEPER
-#   layers      — слои частиц, проигрываются одновременно
+#   sounds      — звуки: { name: ключ, volume: громкость, pitch: высота, delay: задержка в тиках }
+#   layers      — слои спрайтов, проигрываются одновременно
 #
 # Параметры слоя:
-#   animation   — форма:
-#                   BURST    — вспышка в одной точке (radius — разброс)
+#   animation   — движение:
+#                   POP      — спрайт «выскакивает» на месте и исчезает
+#                   RISE     — появляется и поднимается на высоту height
+#                   BURST    — спрайты разлетаются из точки (radius — дальность, fall — падение)
 #                   RING     — кольцо, расходящееся по земле
-#                   HELIX    — спираль вверх (amount — число нитей)
-#                   SPHERE   — расширяющаяся сфера
-#                   IMPLODE  — сфера, сжимающаяся в точку
-#                   FOUNTAIN — фонтан вверх (speed — сила)
-#                   RAIN     — дождь с высоты height
-#                   COLUMN   — вертикальный столб
+#                   SPHERE   — спрайты равномерно разлетаются по сфере
+#                   IMPLODE  — слетаются со сферы в точку
+#                   FOUNTAIN — фонтан: вверх на height и вниз в радиусе radius
+#                   RAIN     — дождь с высоты height в радиусе radius
+#                   HELIX    — спираль вверх (strands — число нитей, amount — спрайтов в нити)
 #                   VORTEX   — вихрь, расширяющийся кверху
-#                   HEART    — вращающееся сердце
-#                   STAR     — пентаграмма на земле
-#                   CROSS    — крест
-#   particle    — частица: https://jd.papermc.io/paper/1.21.11/org/bukkit/Particle.html
-#   amount      — количество частиц
+#                   ORBIT    — спрайты кружат вокруг точки (turns — число оборотов)
+#                   COLUMN   — вспышки на разной высоте столба
+#                   DECAL    — знак на земле: растёт до size и вращается (spin)
+#                   BEAM     — вертикальный столб шириной size и высотой height
+#                   WAVE     — волны: спрайт растёт от точки до size и пропадает
+#                   SLASH    — росчерк удара под углом angle (без него — под случайным)
+#   sprite      — спрайт: название встроенного (spark_gold) или любой предмет в формате
+#                 из config.yml (DIAMOND, "model:пространство:путь", "itemsadder:набор:предмет").
+#                 Список — для каждого спрайта выбирается случайный вариант,
+#                 а нити спиралей получают варианты по порядку.
+#   frames      — кадры вместо sprite: сменяются по порядку каждые frame-ticks тиков
+#   amount      — количество спрайтов
+#   size        — размер в блоках; "0.3-0.5" — случайный в этих пределах
+#   end-size    — размер в конце как доля от начального (по умолчанию 0: сжимается в точку)
 #   radius      — радиус, height — высота, y-offset — подъём над землёй (в блоках)
-#   duration    — длительность в тиках, delay — задержка перед началом
-#   speed       — скорость разлёта частиц
-#   color       — цвет "#RRGGBB" для DUST, DUST_COLOR_TRANSITION (ещё to-color),
-#                 ENTITY_EFFECT, EFFECT, INSTANT_EFFECT, FLASH, TINTED_LEAVES
-#   size        — размер частиц DUST (от 0.1 до 4)
-#   rainbow     — true: радужная окраска цветных частиц
-#   material    — блок или предмет для BLOCK, ITEM, FALLING_DUST, DUST_PILLAR, BLOCK_CRUMBLE
+#   duration    — сколько тиков живёт каждый спрайт, delay — задержка перед началом слоя
+#   interval    — пауза между появлением соседних спрайтов, в тиках
+#   spin        — вращение, градусов за тик
+#   color       — окраска "#RRGGBB" (лучше всего ложится на белые спрайты: spark_white, orb_white)
+#   rainbow     — true: каждый спрайт получает свой цвет радуги
+#   glow        — false: спрайт не светится в темноте (по умолчанию светится)
+
+# Служебная версия файла — не меняйте. Когда формат обновляется, плагин сохраняет
+# прежний файл рядом как kill.yml.vN.bak и кладёт на его место новый.
+file-version: 2
 
 effects:
   lightning:
     name: "<gradient:#fff59d:#ffd54f>Удар молнии</gradient>"
-    icon: LIGHTNING_ROD
+    icon: "model:applecosmetic:gui/kill_lightning"
     lore:
-      - "<gray>Небеса карают поверженного врага."
-    lightning: true
+      - "<#b5838a>Небеса карают поверженного врага."
+    sounds:
+      - { name: entity.lightning_bolt.thunder, volume: 1.0, pitch: 1.1 }
+      - { name: entity.lightning_bolt.impact, volume: 0.8, pitch: 1.0 }
     layers:
-      - { animation: BURST, particle: ELECTRIC_SPARK, amount: 40, radius: 0.5, speed: 0.4 }
-      - { animation: RING, particle: END_ROD, amount: 20, radius: 2.0, duration: 8 }
+      - { animation: BEAM, frames: [thunder_1, thunder_2, thunder_1, thunder_2], frame-ticks: 2, size: 3.2, height: 6.4, duration: 9 }
+      - { animation: POP, sprite: flash_gold, size: 2.4, duration: 8, y-offset: 0.6 }
+      - { animation: BURST, sprite: [bolt_gold, glint_gold], amount: 8, radius: 1.6, size: 0.45, duration: 12, spin: 12 }
+      - { animation: DECAL, sprite: ring_gold, size: 4.5, duration: 14 }
 
   explosion:
     name: "<gradient:#ff6b6b:#ffa751>Взрыв</gradient>"
-    icon: TNT
+    icon: "model:applecosmetic:gui/kill_explosion"
     lore:
-      - "<gray>Громкая точка в споре."
+      - "<#b5838a>Громкая точка в споре."
     sounds:
       - { name: entity.generic.explode, volume: 1.0, pitch: 1.0 }
     layers:
-      - { animation: BURST, particle: EXPLOSION_EMITTER, amount: 1, radius: 0.0, speed: 0.0 }
-      - { animation: BURST, particle: LAVA, amount: 20, radius: 0.5 }
-      - { animation: RING, particle: LARGE_SMOKE, amount: 24, radius: 2.5, duration: 10 }
+      - { animation: POP, frames: [boom_1, boom_2, boom_3, boom_4], frame-ticks: 3, size: 3.6, duration: 12 }
+      - { animation: BURST, sprite: [puff_gray, puff_ink], amount: 8, radius: 1.8, size: "0.5-0.8", duration: 18, delay: 2 }
+      - { animation: BURST, sprite: [spark_orange, spark_gold], amount: 10, radius: 2.2, size: 0.35, duration: 14, fall: 0.6 }
+      - { animation: DECAL, sprite: ring_orange, size: 5.0, duration: 12 }
 
   blood:
     name: "<gradient:#ff4b4b:#a80000>Кровавая расправа</gradient>"
-    icon: REDSTONE
+    icon: "model:applecosmetic:gui/kill_blood"
     lore:
-      - "<gray>Жестоко, зато наглядно."
+      - "<#b5838a>Жестоко, зато наглядно."
     sounds:
       - { name: entity.player.attack.strong, volume: 1.0, pitch: 0.6 }
     layers:
-      - { animation: BURST, particle: BLOCK, material: REDSTONE_BLOCK, amount: 80, radius: 0.35, speed: 0.2 }
-      - { animation: FOUNTAIN, particle: ITEM, material: REDSTONE, amount: 4, radius: 0.3, speed: 0.35, duration: 8 }
+      - { animation: SLASH, sprite: claw_blood, size: 2.2, duration: 9, y-offset: 1.1 }
+      - { animation: BURST, sprite: drop_blood, amount: 14, radius: 1.5, size: "0.3-0.5", duration: 16, fall: 1.2, delay: 2 }
+      - { animation: DECAL, sprite: pool_blood, size: 2.6, duration: 50, delay: 6 }
 
   inferno:
     name: "<gradient:#ffb347:#ff5f1f>Огненный вихрь</gradient>"
-    icon: BLAZE_POWDER
+    icon: "model:applecosmetic:gui/kill_inferno"
     lore:
-      - "<gray>От врага остаётся только пепел."
+      - "<#b5838a>От врага остаётся только пепел."
     sounds:
       - { name: entity.blaze.shoot, volume: 1.0, pitch: 0.8 }
     layers:
-      - { animation: HELIX, particle: FLAME, radius: 0.9, height: 2.4, duration: 24 }
-      - { animation: BURST, particle: LAVA, amount: 12, radius: 0.3 }
+      - { animation: VORTEX, sprite: [flame_orange, flame_blood, flame_orange], strands: 3, amount: 6, radius: 1.3, height: 2.8, duration: 26, size: "0.45-0.65" }
+      - { animation: COLUMN, sprite: [spark_orange, glint_gold], amount: 10, radius: 0.5, height: 2.4, size: 0.3, duration: 14 }
+      - { animation: DECAL, sprite: ring_orange, size: 3.6, duration: 20 }
 
   soul_reaper:
     name: "<gradient:#7df9ff:#3aa6b9>Похититель душ</gradient>"
-    icon: SOUL_LANTERN
+    icon: "model:applecosmetic:gui/kill_soul_reaper"
     lore:
-      - "<gray>Душа врага уходит вверх."
+      - "<#b5838a>Душа врага уходит вверх."
     sounds:
       - { name: particle.soul_escape, volume: 2.0, pitch: 0.8 }
     layers:
-      - { animation: VORTEX, particle: SOUL, amount: 10, radius: 1.0, height: 2.6, duration: 30 }
-      - { animation: COLUMN, particle: SOUL_FIRE_FLAME, amount: 4, radius: 0.2, height: 2.4, duration: 30 }
+      - { animation: SLASH, sprite: scythe, size: 2.0, duration: 12, y-offset: 1.3, angle: 30, spin: -7 }
+      - { animation: RISE, sprite: skull_teal, size: 0.9, height: 2.0, duration: 30, delay: 6, y-offset: 0.8 }
+      - { animation: HELIX, sprite: wisp_teal, strands: 2, amount: 4, radius: 0.8, height: 2.6, duration: 28, size: 0.45, delay: 6 }
+      - { animation: DECAL, sprite: circle_teal, size: 3.2, duration: 34, spin: 3 }
 
   firework:
     name: "<gradient:#ff6b6b:#ffe66d>Салют победителя</gradient>"
-    icon: FIREWORK_ROCKET
+    icon: "model:applecosmetic:gui/kill_firework"
     lore:
-      - "<gray>Победу принято отмечать."
-    firework: { type: BALL_LARGE, colors: ["#ff3b3b", "#ffd93b"], fade: ["#ffffff"], flicker: true, trail: true }
+      - "<#b5838a>Победу принято отмечать."
+    sounds:
+      - { name: entity.firework_rocket.launch, volume: 1.0, pitch: 1.0 }
+      - { name: entity.firework_rocket.large_blast, volume: 1.0, pitch: 1.0, delay: 10 }
+      - { name: entity.firework_rocket.twinkle, volume: 0.8, pitch: 1.0, delay: 16 }
+    layers:
+      - { animation: RISE, sprite: rocket, size: 0.9, height: 3.2, duration: 11, y-offset: 0.4 }
+      - { animation: POP, sprite: flash_gold, size: 2.6, duration: 8, delay: 10, y-offset: 3.6 }
+      - { animation: SPHERE, sprite: [spark_gold, spark_red, spark_orange], amount: 26, radius: 2.4, size: 0.45, duration: 22, delay: 10, y-offset: 3.6, fall: 0.8 }
+      - { animation: SPHERE, sprite: [glint_gold, glint_white], amount: 14, radius: 1.4, size: 0.3, duration: 18, delay: 12, y-offset: 3.6, fall: 0.5 }
 
   frost:
     name: "<gradient:#e0f7ff:#7de8ff>Ледяная гробница</gradient>"
-    icon: BLUE_ICE
+    icon: "model:applecosmetic:gui/kill_frost"
     lore:
-      - "<gray>Враг рассыпается ледяной крошкой."
+      - "<#b5838a>Враг рассыпается ледяной крошкой."
     sounds:
-      - { name: block.glass.break, volume: 1.0, pitch: 0.7 }
+      - { name: block.glass.break, volume: 1.0, pitch: 0.7, delay: 26 }
+      - { name: block.powder_snow.break, volume: 1.0, pitch: 0.8 }
     layers:
-      - { animation: SPHERE, particle: SNOWFLAKE, amount: 30, radius: 1.6, duration: 8 }
-      - { animation: BURST, particle: BLOCK, material: ICE, amount: 60, radius: 0.4, speed: 0.15 }
+      - { animation: POP, sprite: frost, size: 2.2, duration: 30 }
+      - { animation: RING, sprite: shard_ice, amount: 10, radius: 1.8, size: 0.5, duration: 14 }
+      - { animation: RAIN, sprite: [snow_ice, snow_white], amount: 12, radius: 1.5, height: 3.0, size: 0.35, duration: 26, spin: 4 }
+      - { animation: DECAL, sprite: circle_ice, size: 3.6, duration: 30, spin: 2 }
+      - { animation: BURST, sprite: shard_ice, amount: 10, radius: 1.6, size: 0.4, duration: 12, delay: 26, fall: 0.8, spin: 10 }
 
   heartbreak:
     name: "<gradient:#ff8fab:#ff2e4d>Разбитое сердце</gradient>"
-    icon: POPPY
+    icon: "model:applecosmetic:gui/kill_heartbreak"
     lore:
-      - "<gray>Ничего личного."
+      - "<#b5838a>Ничего личного."
     sounds:
       - { name: block.amethyst_block.break, volume: 1.0, pitch: 0.6 }
     layers:
-      - { animation: HEART, particle: DUST, color: "#ff2e4d", size: 1.3, radius: 0.9, duration: 30 }
-      - { animation: BURST, particle: DAMAGE_INDICATOR, amount: 12, radius: 0.4, speed: 0.2 }
+      - { animation: POP, sprite: heartbreak, size: 1.6, duration: 26, y-offset: 1.6 }
+      - { animation: BURST, sprite: [heart_red, heart_pink], amount: 10, radius: 1.4, size: 0.35, duration: 18, delay: 8, y-offset: 1.6, fall: 1.0 }
+      - { animation: RAIN, sprite: drop_red, amount: 6, radius: 0.5, height: 1.6, size: 0.3, duration: 14, delay: 10 }
 
   black_hole:
     name: "<gradient:#c77dff:#5a189a>Чёрная дыра</gradient>"
-    icon: ENDER_PEARL
+    icon: "model:applecosmetic:gui/kill_black_hole"
     lore:
-      - "<gray>Врага затягивает в пустоту."
+      - "<#b5838a>Врага затягивает в пустоту."
     sounds:
       - { name: entity.enderman.teleport, volume: 1.0, pitch: 0.5 }
     layers:
-      - { animation: IMPLODE, particle: DUST, color: "#7b2cbf", size: 1.2, amount: 30, radius: 2.0, duration: 14 }
-      - { animation: BURST, particle: PORTAL, amount: 120, radius: 0.2, speed: 1.2 }
+      - { animation: POP, sprite: black_hole_big, size: 2.6, duration: 34, y-offset: 1.2, spin: 14 }
+      - { animation: IMPLODE, sprite: [spark_purple, dot_purple, glint_pink], amount: 20, radius: 2.6, size: 0.4, duration: 14, y-offset: 1.2 }
+      - { animation: IMPLODE, sprite: [spark_purple, dot_ink], amount: 16, radius: 2.2, size: 0.35, duration: 14, y-offset: 1.2, delay: 12 }
+      - { animation: POP, sprite: flash_purple, size: 2.2, duration: 6, y-offset: 1.2, delay: 30 }
 
   dna:
     name: "<gradient:#c77dff:#4dd2ff>Спираль ДНК</gradient>"
-    icon: AMETHYST_SHARD
+    icon: "model:applecosmetic:gui/kill_dna"
     lore:
-      - "<gray>Разобран на составляющие."
+      - "<#b5838a>Разобран на составляющие."
     sounds:
       - { name: block.amethyst_block.chime, volume: 1.5, pitch: 0.8 }
     layers:
-      - { animation: HELIX, particle: DUST_COLOR_TRANSITION, color: "#b44dff", to-color: "#4dd2ff", size: 1.2, radius: 0.6, height: 2.4, duration: 30 }
+      - { animation: HELIX, sprite: [orb_purple, orb_teal], strands: 2, amount: 9, radius: 0.6, height: 2.6, turns: 2.5, duration: 32, size: 0.36 }
+      - { animation: COLUMN, sprite: [glint_purple, glint_teal], amount: 8, radius: 0.3, height: 2.4, size: 0.28, duration: 12, interval: 3 }
 
   gold_rush:
     name: "<gradient:#ffe259:#ffa751>Золотая лихорадка</gradient>"
-    icon: GOLD_INGOT
+    icon: "model:applecosmetic:gui/kill_gold_rush"
     lore:
-      - "<gray>Из врага сыплется золото."
-      - "<dark_gray>Подобрать его нельзя."
+      - "<#b5838a>Из врага сыплется золото."
+      - "<#7a5c60>Подобрать его нельзя."
     sounds:
       - { name: entity.experience_orb.pickup, volume: 1.0, pitch: 0.7 }
     layers:
-      - { animation: FOUNTAIN, particle: ITEM, material: GOLD_NUGGET, amount: 6, radius: 0.3, speed: 0.45, duration: 18 }
-      - { animation: RING, particle: WAX_ON, amount: 20, radius: 1.5, duration: 10 }
+      - { animation: POP, sprite: gold_rush, size: 1.4, duration: 26, y-offset: 0.7 }
+      - { animation: FOUNTAIN, sprite: [coin, coin, gem_green], amount: 16, radius: 1.8, height: 2.2, size: "0.35-0.5", duration: 30, spin: 14 }
+      - { animation: COLUMN, sprite: [spark_gold, glint_gold], amount: 10, radius: 0.6, height: 2.0, size: 0.3, duration: 12 }
 
   pentagram:
     name: "<gradient:#ff4b4b:#7a0000>Пентаграмма</gradient>"
-    icon: WITHER_ROSE
+    icon: "model:applecosmetic:gui/kill_pentagram"
     lore:
-      - "<gray>Тёмный ритуал завершён."
+      - "<#b5838a>Тёмный ритуал завершён."
     sounds:
       - { name: entity.evoker.prepare_summon, volume: 1.0, pitch: 0.7 }
     layers:
-      - { animation: STAR, particle: DUST, color: "#c40000", size: 1.2, radius: 1.8, duration: 40 }
-      - { animation: COLUMN, particle: SMOKE, amount: 6, radius: 0.3, height: 2.0, duration: 40 }
+      - { animation: DECAL, sprite: pentagram_decal, size: 4.2, duration: 46, spin: 3 }
+      - { animation: RING, sprite: flame_blood, amount: 5, radius: 1.9, size: 0.6, duration: 30, delay: 4 }
+      - { animation: COLUMN, sprite: [flame_blood, flame_purple], amount: 14, radius: 0.9, height: 1.2, size: 0.45, duration: 16, delay: 6 }
+      - { animation: RISE, sprite: skull_blood, size: 1.1, height: 1.6, duration: 30, delay: 12, y-offset: 0.6 }
 
   tornado:
     name: "<gradient:#ffffff:#b8c6db>Торнадо</gradient>"
-    icon: WIND_CHARGE
+    icon: "model:applecosmetic:gui/kill_tornado"
     lore:
-      - "<gray>Врага уносит ветром."
+      - "<#b5838a>Врага уносит ветром."
     sounds:
       - { name: entity.breeze.wind_burst, volume: 1.0, pitch: 0.8 }
     layers:
-      - { animation: VORTEX, particle: CLOUD, amount: 18, radius: 1.5, height: 3.2, duration: 30 }
-      - { animation: BURST, particle: GUST, amount: 2, radius: 0.5, speed: 0.0 }
+      - { animation: VORTEX, sprite: [puff_white, puff_gray, puff_white], strands: 3, amount: 7, radius: 1.5, height: 3.2, turns: 2.5, duration: 28, size: "0.5-0.8", glow: false }
+      - { animation: VORTEX, sprite: [leaf_green, dot_brown], strands: 2, amount: 4, radius: 1.8, height: 3.0, duration: 30, size: 0.35, interval: 3, spin: 16, glow: false }
+      - { animation: DECAL, sprite: swirl_white, size: 3.0, duration: 30, spin: 12 }
 
   sakura:
     name: "<gradient:#ffd1dc:#ff8fab>Цветение сакуры</gradient>"
-    icon: PINK_PETALS
+    icon: "model:applecosmetic:gui/kill_sakura"
     lore:
-      - "<gray>Красиво даже в поражении."
+      - "<#b5838a>Красиво даже в поражении."
     sounds:
       - { name: block.cherry_leaves.break, volume: 1.0, pitch: 1.0 }
     layers:
-      - { animation: RAIN, particle: CHERRY_LEAVES, amount: 6, radius: 1.5, height: 3.0, duration: 40 }
-      - { animation: RING, particle: DUST, color: "#ffb7d5", amount: 24, radius: 1.5, duration: 12 }
+      - { animation: POP, sprite: sakura, size: 1.5, duration: 30, y-offset: 1.4, spin: 3 }
+      - { animation: RAIN, sprite: [petal_pink, petal_pink, petal_white], amount: 20, radius: 1.8, height: 3.2, size: "0.3-0.45", duration: 30, spin: 6, interval: 1 }
+      - { animation: RING, sprite: petal_pink, amount: 10, radius: 2.0, size: 0.4, duration: 18, spin: 8 }
+      - { animation: DECAL, sprite: circle_pink, size: 3.4, duration: 30, spin: 2 }
 
   triumph:
     name: "<gradient:#a8ff78:#ffe259>Триумф</gradient>"
-    icon: TOTEM_OF_UNDYING
+    icon: "model:applecosmetic:gui/kill_triumph"
     lore:
-      - "<gray>Победа, достойная легенд."
+      - "<#b5838a>Победа, достойная легенд."
     sounds:
       - { name: item.totem.use, volume: 0.6, pitch: 1.2 }
     layers:
-      - { animation: BURST, particle: TOTEM_OF_UNDYING, amount: 80, radius: 0.3, speed: 0.6 }
+      - { animation: BEAM, sprite: beam_gold, size: 1.6, height: 5.0, duration: 30 }
+      - { animation: RISE, sprite: trophy, size: 1.4, height: 1.2, duration: 40, y-offset: 1.2 }
+      - { animation: FOUNTAIN, sprite: [confetti_red, confetti_gold, confetti_green, confetti_blue, strip_pink, strip_teal], amount: 18, radius: 2.0, height: 2.6, size: 0.4, duration: 34, spin: 18, delay: 4 }
+      - { animation: ORBIT, sprite: star_gold, amount: 4, radius: 1.1, turns: 1.5, duration: 36, size: 0.5, y-offset: 1.4 }
+      - { animation: DECAL, sprite: circle_gold, size: 3.6, duration: 40, spin: 3 }

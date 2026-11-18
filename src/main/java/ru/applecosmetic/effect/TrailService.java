@@ -27,7 +27,7 @@ import ru.applecosmetic.cosmetic.Cosmetic;
 public final class TrailService implements Listener {
 
     /** Больше спрайтов за тик один снаряд не оставляет: у быстрых стрел след просто реже. */
-    private static final int MAX_PER_TICK = 5;
+    private static final int MAX_PER_TICK = 4;
     private static final double TAU = Math.PI * 2;
 
     private final AppleCosmeticPlugin plugin;
@@ -203,16 +203,18 @@ public final class TrailService implements Listener {
                 y += random.nextGaussian() * trail.spread();
                 z += random.nextGaussian() * trail.spread();
             }
-            emit(trail, world, only, x, y, z);
+            state.hue += 0.07;
+            emit(trail, world, only, x, y, z, state.hue);
         }
     }
 
     /** Один спрайт следа: появляется сразу в полном размере и тает на месте. */
-    private void emit(TrailDefinition trail, World world, Player only, double x, double y, double z) {
+    private void emit(TrailDefinition trail, World world, Player only, double x, double y, double z, double hue) {
         ThreadLocalRandom random = ThreadLocalRandom.current();
         SpriteSpec sprite = trail.sprite();
         SpritePlan plan = new SpritePlan(world, only).at(x, y, z);
-        plan.item = sprite.pick();
+        // Радужный след переливается по порядку, а не случайно.
+        plan.item = sprite.rainbow() ? sprite.pick(random.nextInt(1 << 16), hue) : sprite.pick();
         plan.frames = sprite.frames();
         plan.frameTicks = sprite.frameTicks();
         plan.glow = sprite.glow();
@@ -245,6 +247,7 @@ public final class TrailService implements Listener {
         double angle;
         /** Путь, пройденный после последнего спрайта. */
         double carry;
+        double hue;
 
         State(Cosmetic cosmetic, Location last) {
             this.cosmetic = cosmetic;

@@ -40,7 +40,11 @@ public final class EffectService implements Listener {
             return;
         }
         for (SoundSpec sound : effect.sounds()) {
-            sound.play(origin, only);
+            if (sound.delay() <= 0) {
+                sound.play(origin, only);
+            } else {
+                Bukkit.getScheduler().runTaskLater(plugin, () -> sound.play(origin, only), sound.delay());
+            }
         }
         Animation.Scene scene = new Animation.Scene(plugin.sprites(), world, only,
                 origin.getX(), origin.getY(), origin.getZ());

@@ -265,7 +265,8 @@ public enum Animation {
         @Override
         void start(EffectLayer layer, Scene scene) {
             SpritePlan plan = plan(layer, scene, 0);
-            plan.at(scene.x, scene.y + layer.yOffset(), scene.z);
+            // Небольшой случайный подъём, чтобы два знака в одной точке не мерцали друг сквозь друга.
+            plan.at(scene.x, scene.y + layer.yOffset() + ThreadLocalRandom.current().nextDouble(0.03), scene.z);
             plan.facing = SpritePlan.Facing.GROUND;
             plan.in = Math.max(2, Math.min(8, layer.duration() / 3));
             plan.out = Math.max(3, layer.duration() / 4);
@@ -288,6 +289,19 @@ public enum Animation {
                 plan.out = Math.max(2, layer.duration() / 3);
                 plan.spin = 0f;
                 plan.roll = 0f;
+                scene.engine.add(plan);
+            }
+        }
+    },
+
+    /** Волна: спрайт растёт от точки до размера size и пропадает; amount волн идут друг за другом. */
+    WAVE(3, 0.0, 0.0, 1.0, 10, 2.0, 3) {
+        @Override
+        void start(EffectLayer layer, Scene scene) {
+            for (int i = 0; i < layer.amount(); i++) {
+                SpritePlan plan = plan(layer, scene, i);
+                scatter(plan, layer, scene);
+                plan.in = Math.max(2, layer.duration() - 1);
                 scene.engine.add(plan);
             }
         }
@@ -394,6 +408,8 @@ public enum Animation {
             double start = phase + TAU * strand / strands;
             for (int i = 0; i < layer.amount(); i++) {
                 SpritePlan plan = plan(layer, scene, i);
+                // Нитям спирали варианты спрайта назначаются по порядку: у каждой нити свой.
+                plan.item = layer.sprite().pick(strand, (double) strand / strands);
                 plan.path = (t, out) -> {
                     double angle = start + TAU * layer.turns() * t;
                     double radius = widening ? layer.radius() * (0.15 + 0.85 * t) : layer.radius();

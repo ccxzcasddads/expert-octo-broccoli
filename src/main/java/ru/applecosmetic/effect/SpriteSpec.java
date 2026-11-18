@@ -113,16 +113,28 @@ public final class SpriteSpec {
         item.editMeta(LeatherArmorMeta.class, meta -> meta.setColor(color));
     }
 
-    /** Предмет для новой частицы: случайный вариант, для радужных — со случайным оттенком. */
+    /** Предмет для нового спрайта: случайный вариант, для радужных — со случайным оттенком. */
     public ItemStack pick() {
         ThreadLocalRandom random = ThreadLocalRandom.current();
-        ItemStack item = variants.get(variants.size() == 1 ? 0 : random.nextInt(variants.size()));
+        return pick(variants.size() == 1 ? 0 : random.nextInt(variants.size()), random.nextDouble());
+    }
+
+    /**
+     * @param index номер варианта из списка sprite (берётся по кругу)
+     * @param hue   оттенок от 0 до 1 для радужных спрайтов
+     */
+    public ItemStack pick(int index, double hue) {
+        ItemStack item = variants.get(Math.floorMod(index, variants.size()));
         if (!rainbow) {
             return item;
         }
         ItemStack copy = item.clone();
-        tint(copy, fromHue(random.nextDouble()));
+        tint(copy, fromHue(hue));
         return copy;
+    }
+
+    public boolean rainbow() {
+        return rainbow;
     }
 
     /** Кадры по порядку; пустой список — картинка не меняется. */

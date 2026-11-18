@@ -82,9 +82,13 @@ public final class MenuManager implements Listener {
         }
         ConfigurationSection close = config.getConfigurationSection("close");
         if (close != null) {
+            String command = close.getString("command", "").trim();
             place(menu, close, button(close, Material.OAK_DOOR), (clicker, click) -> {
                 sound(clicker, "click");
                 clicker.closeInventory();
+                if (!command.isEmpty()) {
+                    clicker.performCommand(command.startsWith("/") ? command.substring(1) : command);
+                }
             });
         }
         player.openInventory(menu.getInventory());

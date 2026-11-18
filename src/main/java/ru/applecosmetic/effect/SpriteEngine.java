@@ -23,6 +23,7 @@ public final class SpriteEngine {
     private static final float MAX_TURN = 2.0f;
     private static final int MAX_TELEPORT_TICKS = 59;
     private static final float HALF_PI = (float) (Math.PI / 2);
+    private static final float FLAT_DEPTH = 0.02f;
 
     private final AppleCosmeticPlugin plugin;
     private final List<Live> live = new ArrayList<>();
@@ -104,6 +105,8 @@ public final class SpriteEngine {
         try {
             entity = plan.world.spawn(at, ItemDisplay.class, display -> {
                 display.setItemStack(plan.frames.isEmpty() ? plan.item : plan.frames.get(0));
+                // Как в рамке: плоский предмет обращён к зрителю лицевой стороной, без зеркального отражения.
+                display.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.FIXED);
                 display.setBillboard(switch (plan.facing) {
                     case CAMERA -> Display.Billboard.CENTER;
                     case UPRIGHT -> Display.Billboard.VERTICAL;
@@ -234,7 +237,9 @@ public final class SpriteEngine {
                     ? new Quaternionf().rotationY(angle).rotateX(-HALF_PI)
                     : new Quaternionf().rotationZ(angle);
             float height = plan.tall > 0f ? plan.tall : scale;
-            return new Transformation(new Vector3f(), rotation, new Vector3f(scale, height, scale),
+            // У плоского предмета есть толщина в один пиксель; знаки на земле и столбы без неё выглядят чище.
+            float depth = plan.facing == SpritePlan.Facing.CAMERA ? scale : Math.min(scale, FLAT_DEPTH);
+            return new Transformation(new Vector3f(), rotation, new Vector3f(scale, height, depth),
                     new Quaternionf());
         }
 

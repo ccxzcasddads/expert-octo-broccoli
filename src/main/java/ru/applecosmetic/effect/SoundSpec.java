@@ -8,15 +8,19 @@ import org.bukkit.SoundCategory;
 import org.bukkit.entity.Player;
 import ru.applecosmetic.util.Params;
 
-/** Звук по ключу, например entity.blaze.shoot; подходят и звуки из ресурспака. */
-public record SoundSpec(String name, float volume, float pitch) {
+/**
+ * Звук по ключу, например entity.blaze.shoot; подходят и звуки из ресурспака.
+ *
+ * @param delay через сколько тиков после начала эффекта звук проигрывается
+ */
+public record SoundSpec(String name, float volume, float pitch, int delay) {
 
     public static SoundSpec parse(Object source) {
         if (source == null) {
             return null;
         }
         if (source instanceof String text) {
-            return text.isBlank() ? null : new SoundSpec(text.trim().toLowerCase(Locale.ROOT), 1.0f, 1.0f);
+            return text.isBlank() ? null : new SoundSpec(text.trim().toLowerCase(Locale.ROOT), 1.0f, 1.0f, 0);
         }
         Params params = Params.of(source);
         String name = params.string("name", "");
@@ -24,7 +28,8 @@ public record SoundSpec(String name, float volume, float pitch) {
             return null;
         }
         return new SoundSpec(name.trim().toLowerCase(Locale.ROOT),
-                (float) params.decimal("volume", 1.0), (float) params.decimal("pitch", 1.0));
+                (float) params.decimal("volume", 1.0), (float) params.decimal("pitch", 1.0),
+                Math.max(0, Math.min(200, params.integer("delay", 0))));
     }
 
     /** Звуки Minecraft сверяются с реестром; звуки из ресурспаков проверить нельзя. */

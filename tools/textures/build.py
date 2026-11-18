@@ -142,9 +142,12 @@ def previews(backgrounds):
         sheet.alpha_composite(shot, (gap + (index % 3) * (width + gap), gap + (index // 3) * (height + gap)))
     pixel.scale(sheet, factor).save(PREVIEW / "menus.png", optimize=True)
 
-    effect_icons = [image for name, image in icons.ICONS.items()
-                    if name.split("_")[0] in ("kill", "crit", "projectile", "firework", "death")]
-    pixel.sheet(effect_icons, columns=14, factor=4, background="#3e0a16").save(PREVIEW / "effect_icons.png",
+    # По ряду на категорию; в ряду пятнадцать мест, пустые остаются прозрачными.
+    effect_icons = []
+    for category in ("kill", "crit", "projectile", "firework", "death"):
+        row = [image for name, image in icons.ICONS.items() if name.startswith(category + "_")]
+        effect_icons += row + [icons.ICONS["invisible"]] * (15 - len(row))
+    pixel.sheet(effect_icons, columns=15, factor=4, background="#3e0a16").save(PREVIEW / "effect_icons.png",
                                                                                optimize=True)
     captioned_sheet(fx.SPRITES, columns=12).save(PREVIEW / "sprites.png", optimize=True)
 

@@ -11,12 +11,15 @@
 #   effects/kill.yml          — эффекты убийства
 #   effects/crit.yml          — эффекты критического удара
 #   effects/projectile.yml    — эффекты снарядов
+#   effects/firework.yml      — эффекты фейерверков
 #   effects/death.yml         — эффекты смерти
 # Сообщения — в messages.yml. После правок выполните /cosmetics reload.
 #
 # ── Текст ───────────────────────────────────────────────────────────────
 # Поддерживаются формат MiniMessage (<red>, <bold>, <#ff8800>,
 # <gradient:#ff0000:#ffaa00>текст</gradient>) и привычные коды (&c, &l, &#ff8800).
+# Дополнительно: <ui>текст</ui> — текст шрифтом интерфейса (menu.font), а значки
+# {|}, {•}, {ЛКМ}, {ПКМ} и {СКМ} превращаются в символы этого шрифта.
 #
 # ── Предметы ────────────────────────────────────────────────────────────
 # В полях icon и item во всех файлах можно указать:
@@ -32,12 +35,14 @@
 # Вместо одного предмета можно указать список — тогда берётся первый доступный вариант:
 #   item: ["itemsadder:applecosmetic:sword_frost", BREEZE_ROD]
 #
-# ── 3D-модели ───────────────────────────────────────────────────────────
-# В плагин встроены 40 моделей: по 10 мечей, кирок, тотемов и шляп.
-#   ItemsAdder  — набор «applecosmetic»: предметы applecosmetic:sword_frost, applecosmetic:hat_crown и т. д.
-#   BetterModel — модели шляп ac_hat_crown, ac_hat_wizard и т. д. (BetterModel закрепляет модели
-#                 на игроке, поэтому в нём доступны только шляпы; мечи, кирки и тотемы — это предметы)
-# Листы с изображениями всех моделей лежат в папке docs/preview репозитория плагина.
+# ── Ресурспак ───────────────────────────────────────────────────────────
+# В плагин встроены два набора для ItemsAdder:
+#   applecosmetic      — 40 моделей: по 10 мечей, кирок, тотемов и шляп
+#                        (предметы applecosmetic:sword_frost, applecosmetic:hat_crown и т. д.)
+#   applecosmetic_raw  — текстуры эффектов и меню: спрайты (модели applecosmetic:fx/…),
+#                        иконки (applecosmetic:gui/…), фоны окон, шрифт и рамка подсказок
+# BetterModel получает модели шляп ac_hat_crown, ac_hat_wizard и т. д.
+# Листы с изображениями лежат в папке docs/preview репозитория плагина.
 #
 # ── Права ───────────────────────────────────────────────────────────────
 #   applecosmetic.use                    — открывать меню (есть у всех)
@@ -45,18 +50,22 @@
 #   applecosmetic.all                    — вся косметика
 #   applecosmetic.<категория>.*          — вся косметика категории
 #   applecosmetic.<категория>.<id>       — одна позиция
-# Категории: sword, pickaxe, totem, hat, kill, crit, projectile, death.
+# Категории: sword, pickaxe, totem, hat, kill, crit, projectile, firework, death.
+
+# Служебная версия файла — не меняйте. Когда формат настроек обновляется, плагин сохраняет
+# прежний файл рядом как config.yml.vN.bak и кладёт на его место новый.
+file-version: 2
 
 settings:
   # Проверять права на косметику. false — вся косметика доступна всем игрокам.
   require-permissions: true
 
-# Встроенные 3D-модели.
+# Встроенные наборы для ресурспака.
 models:
-  # Копировать модели в папки ItemsAdder (contents/applecosmetic) и BetterModel (models),
-  # если эти плагины установлены. Копируются только недостающие файлы: ваши правки
-  # не затираются, а удалённый файл появится снова. После первой установки выполните
-  # /iazip (ItemsAdder) и /bettermodel reload (BetterModel).
+  # Копировать наборы в папки ItemsAdder (contents/applecosmetic и contents/applecosmetic_raw)
+  # и BetterModel (models), если эти плагины установлены. Копируются только недостающие файлы:
+  # ваши правки не затираются, а удалённый файл появится снова. После первой установки
+  # и после обновления плагина выполните /iazip (ItemsAdder) и /bettermodel reload (BetterModel).
   auto-install: true
 
 # Облики мечей, кирок и тотемов.
@@ -80,7 +89,15 @@ hats:
   # Как часто повторно отправлять шляпу игрокам поблизости, в тиках.
   refresh-interval-ticks: 40
 
+# Эффекты собраны из спрайтов — картинок из набора applecosmetic_raw. Без ресурспака
+# с этим набором игроки увидят вместо них чёрно-фиолетовые квадраты.
 effects:
+  sprites:
+    # Сколько спрайтов эффектов может одновременно быть на сервере. Когда предел достигнут,
+    # новые спрайты не появляются, пока не исчезнут старые.
+    max: 800
+    # С какого расстояния спрайты видны игрокам, в блоках.
+    view-distance: 48
   # Эффекты убийства: при убийстве кого их показывать.
   kill:
     players: true
@@ -89,6 +106,9 @@ effects:
   crit:
     players: true
     mobs: true
+    # Пауза между эффектами одного игрока, в тиках: защищает от засыпания спрайтами
+    # на серверах, где бить можно без перезарядки.
+    cooldown-ticks: 4
   # Эффекты снарядов.
   projectile:
     # За какими снарядами тянется след.
@@ -100,16 +120,30 @@ effects:
       - EGG
       - ENDER_PEARL
       - WIND_CHARGE
-    # Сколько тиков след может тянуться за одним снарядом.
+    # Сколько тиков след может тянуться за одним снарядом или ракетой.
     max-ticks: 200
+  # Эффекты фейерверков.
+  firework:
+    # След за ракетами, запущенными с земли или из арбалета.
+    rockets: true
+    # След за игроком, который разгоняется ракетой на элитрах.
+    elytra: true
 
 # ── Меню /cosmetics ──────────────────────────────────────────────────────
-# Слоты считаются с нуля: первый ряд — 0–8, второй — 9–17 и так далее.
+# Окна оформлены в стиле сервера: фон, заголовок, ячейки и кнопки нарисованы в картинке,
+# которая выводится заголовком окна. Слоты считаются с нуля: первый ряд — 0–8, второй — 9–17
+# и так далее. Картинки рассчитаны на раскладку ниже: если менять ряды и слоты, верните
+# обычные заголовки ("Косметика") и обычные иконки кнопок (applecosmetic:gui/btn_back и другие).
 menu:
-  # Предмет, которым заполняются пустые слоты. Оставьте "", чтобы отключить.
-  filler: BLACK_STAINED_GLASS_PANE
+  # Предмет, которым заполняются пустые слоты. "" — не заполнять: фон окна уже нарисован.
+  filler: ""
   # Подсвечивать выбранную косметику сиянием зачарования.
   selected-glint: true
+  # Рамка подсказок у предметов меню (tooltip_style из ресурспака). "" — обычная рамка Minecraft.
+  tooltip-style: "applecosmetic:menu"
+  # Шрифт интерфейса из ресурспака: им пишутся названия предметов меню и текст в теге <ui>.
+  # "" — обычный шрифт Minecraft.
+  font: "applecosmetic:bold"
 
   # Звуки меню. name — ключ звука (подходят и звуки из ресурспака); "" — без звука.
   sounds:
@@ -120,126 +154,166 @@ menu:
 
   # Главное окно.
   main:
-    title: "<dark_gray>Косметика"
+    # Заголовок — картинка окна из шрифта applecosmetic:menu: \uE000 сдвигает её
+    # к левому краю, \uE001 — сам фон. Цвет обязательно белый, иначе картинка окрасится.
+    title: "<white><font:applecosmetic:menu>\uE000\uE001</font></white>"
     rows: 5
     # Строки, которые добавляются к описанию каждой категории.
     # {selected} — выбранная косметика, {owned} — сколько открыто, {total} — сколько всего.
     category-lore:
       - ""
-      - "<gray>Выбрано: <white>{selected}"
-      - "<gray>Открыто: <white>{owned}<dark_gray>/<white>{total}"
+      - "<#b5838a>Выбрано: <white>{selected}"
+      - "<#b5838a>Открыто: <white>{owned}<#7a5c60>/<white>{total}"
       - ""
-      - "<yellow>▶ Нажмите, чтобы открыть"
-    # title — название категории в заголовке окна и сообщениях.
+      - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы открыть</ui>"
+    # title — название категории в сообщениях и обычных заголовках,
+    # background — символ фона окна этой категории в шрифте applecosmetic:menu.
     categories:
       sword:
         slot: 10
-        icon: DIAMOND_SWORD
+        icon: "model:applecosmetic:gui/cat_sword"
         title: "Мечи"
-        name: "<gradient:#7de8ff:#4d9dff><bold>Мечи</bold></gradient>"
+        background: "\uE010"
+        name: "<gradient:#7de8ff:#4d9dff>Мечи</gradient>"
         lore:
-          - "<gray>Облики для ваших мечей."
+          - "<#b5838a>Облики для ваших мечей."
       pickaxe:
         slot: 12
-        icon: DIAMOND_PICKAXE
+        icon: "model:applecosmetic:gui/cat_pickaxe"
         title: "Кирки"
-        name: "<gradient:#ffe259:#ffa751><bold>Кирки</bold></gradient>"
+        background: "\uE011"
+        name: "<gradient:#ffe259:#ffa751>Кирки</gradient>"
         lore:
-          - "<gray>Облики для ваших кирок."
+          - "<#b5838a>Облики для ваших кирок."
       totem:
         slot: 14
-        icon: TOTEM_OF_UNDYING
+        icon: "model:applecosmetic:gui/cat_totem"
         title: "Тотемы"
-        name: "<gradient:#a8ff78:#78ffd6><bold>Тотемы</bold></gradient>"
+        background: "\uE012"
+        name: "<gradient:#a8ff78:#78ffd6>Тотемы</gradient>"
         lore:
-          - "<gray>Облики тотемов бессмертия."
-          - "<gray>Меняют и анимацию срабатывания."
+          - "<#b5838a>Облики тотемов бессмертия."
+          - "<#b5838a>Меняют и анимацию срабатывания."
       hat:
         slot: 16
-        icon: GOLDEN_HELMET
+        icon: "model:applecosmetic:gui/cat_hat"
         title: "Шляпы"
-        name: "<gradient:#f6d365:#fda085><bold>Шляпы</bold></gradient>"
+        background: "\uE013"
+        name: "<gradient:#e0c8ff:#b888ff>Шляпы</gradient>"
         lore:
-          - "<gray>Головные уборы поверх шлема."
+          - "<#b5838a>Головные уборы поверх шлема."
       kill:
-        slot: 28
-        icon: WITHER_SKELETON_SKULL
+        slot: 29
+        icon: "model:applecosmetic:gui/cat_kill"
         title: "Эффекты убийства"
-        name: "<gradient:#ff5f6d:#ffc371><bold>Эффекты убийства</bold></gradient>"
+        background: "\uE014"
+        name: "<gradient:#ff5f6d:#ffc371>Эффекты убийства</gradient>"
         lore:
-          - "<gray>Проигрываются на месте гибели"
-          - "<gray>убитого вами противника."
+          - "<#b5838a>Проигрываются на месте гибели"
+          - "<#b5838a>убитого вами противника."
       crit:
         slot: 30
-        icon: BLAZE_POWDER
+        icon: "model:applecosmetic:gui/cat_crit"
         title: "Эффекты крита"
-        name: "<gradient:#f7971e:#ffd200><bold>Эффекты критического удара</bold></gradient>"
+        background: "\uE015"
+        name: "<gradient:#f7971e:#ffd200>Эффекты критического удара</gradient>"
         lore:
-          - "<gray>Проигрываются, когда вы наносите"
-          - "<gray>критический удар."
+          - "<#b5838a>Проигрываются, когда вы наносите"
+          - "<#b5838a>критический удар."
       projectile:
-        slot: 32
-        icon: BOW
+        slot: 31
+        icon: "model:applecosmetic:gui/cat_projectile"
         title: "Эффекты снарядов"
-        name: "<gradient:#43e97b:#38f9d7><bold>Эффекты снарядов</bold></gradient>"
+        background: "\uE016"
+        name: "<gradient:#6ca8ff:#56e4ec>Эффекты снарядов</gradient>"
         lore:
-          - "<gray>След за вашими стрелами"
-          - "<gray>и другими снарядами."
+          - "<#b5838a>След за вашими стрелами"
+          - "<#b5838a>и другими снарядами."
+      firework:
+        slot: 32
+        icon: "model:applecosmetic:gui/cat_firework"
+        title: "Эффекты фейерверков"
+        background: "\uE017"
+        name: "<gradient:#ff8cc8:#ffc83c>Эффекты фейерверков</gradient>"
+        lore:
+          - "<#b5838a>След за вашими ракетами,"
+          - "<#b5838a>в том числе в полёте на элитрах."
       death:
-        slot: 34
-        icon: SKELETON_SKULL
+        slot: 33
+        icon: "model:applecosmetic:gui/cat_death"
         title: "Эффекты смерти"
-        name: "<gradient:#b993d6:#8ca6db><bold>Эффекты смерти</bold></gradient>"
+        background: "\uE018"
+        name: "<gradient:#e0e0e8:#8ca6db>Эффекты смерти</gradient>"
         lore:
-          - "<gray>Проигрываются на месте"
-          - "<gray>вашей гибели."
-    # Кнопка «снять всё».
+          - "<#b5838a>Проигрываются на месте"
+          - "<#b5838a>вашей гибели."
+    # Кнопка «Сбросить» нарисована на фоне, поэтому занимает несколько слотов (slots)
+    # и стоит в них невидимым предметом. Для обычной кнопки укажите slot и свою иконку.
     reset:
-      slot: 40
-      icon: BARRIER
-      name: "<red>Снять всю косметику"
+      slots: [36, 37, 38, 39]
+      icon: "model:applecosmetic:gui/invisible"
+      name: "<#ff4d4d>Снять всю косметику"
       lore:
-        - "<gray>Убирает облики, шляпу и все эффекты."
+        - "<#b5838a>Убирает облики, шляпу и все эффекты."
+        - ""
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы снять всё</ui>"
+    # Кнопка «Назад»: закрывает меню. Если указать command, игрок вместо этого
+    # выполнит команду — например, "menu", чтобы вернуться в главное меню сервера.
+    close:
+      slots: [41, 42, 43, 44]
+      icon: "model:applecosmetic:gui/invisible"
+      command: ""
+      name: "<#f21d1d>Назад"
+      lore:
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы закрыть</ui>"
 
   # Окно категории.
   category:
-    # {category} — название категории, {page} и {pages} — номер страницы и их количество.
-    title: "<dark_gray>{category} <gray>• {page}/{pages}"
+    # {background} — фон окна категории (поле background выше), {category} — её название,
+    # {page} и {pages} — номер страницы и их количество.
+    title: "<white><font:applecosmetic:menu>\uE000{background}</font></white>"
     rows: 5
     # Слоты для косметики; если позиций больше, появляются страницы.
     item-slots: [10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23, 24, 25, 28, 29, 30, 31, 32, 33, 34]
     back:
-      slot: 36
-      icon: ARROW
-      name: "<yellow>← Назад"
+      slots: [36, 37, 38, 39]
+      icon: "model:applecosmetic:gui/invisible"
+      name: "<#f21d1d>Назад"
       lore:
-        - "<gray>Вернуться к категориям."
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы вернуться к категориям</ui>"
+    # Стрелки страниц появляются, только когда есть куда листать.
     previous:
-      slot: 39
-      icon: SPECTRAL_ARROW
-      name: "<yellow>« Предыдущая страница"
-    unequip:
-      slot: 40
-      icon: BARRIER
-      name: "<red>Снять"
+      slot: 18
+      icon: "model:applecosmetic:gui/btn_prev"
+      name: "<#ffc83c>Предыдущая страница"
       lore:
-        - "<gray>Сейчас выбрано: <white>{selected}"
+        - "<#b5838a>Страница {page} из {pages}"
     next:
-      slot: 41
-      icon: SPECTRAL_ARROW
-      name: "<yellow>Следующая страница »"
+      slot: 26
+      icon: "model:applecosmetic:gui/btn_next"
+      name: "<#ffc83c>Следующая страница"
+      lore:
+        - "<#b5838a>Страница {page} из {pages}"
+    unequip:
+      slots: [41, 42, 43, 44]
+      icon: "model:applecosmetic:gui/invisible"
+      name: "<#ff4d4d>Снять"
+      lore:
+        - "<#b5838a>Сейчас выбрано: <white>{selected}"
+        - ""
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы снять</ui>"
     # Строки состояния, которые добавляются к описанию косметики.
     status:
       selected:
         - ""
-        - "<green>✔ Выбрано"
-        - "<gray>Нажмите, чтобы снять"
+        - "<ui><#5cff8a>{•} Выбрано</ui>"
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы снять</ui>"
       available:
         - ""
-        - "<yellow>▶ Нажмите, чтобы выбрать"
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ЛКМ}, чтобы выбрать</ui>"
       locked:
         - ""
-        - "<red>✖ Недоступно"
+        - "<ui><#ff4d4d>{•} Недоступно</ui>"
       # Добавляется к эффектам: правая кнопка показывает эффект только вам.
       preview:
-        - "<aqua>ПКМ <gray>— предпросмотр"
+        - "<ui><#ff4d4d>{|} <#f8f0dc>Нажмите {ПКМ} для предпросмотра</ui>"

@@ -2,7 +2,8 @@
 # ║           AppleCosmetic — эффекты критического удара               ║
 # ╚════════════════════════════════════════════════════════════════════╝
 # Эффект проигрывается на цели, когда игрок наносит критический удар
-# (удар в падении). По кому он срабатывает, задаётся в config.yml → effects.crit.
+# (удар в падении). По кому он срабатывает и как часто, задаётся
+# в config.yml → effects.crit.
 #
 # Поля эффекта:
 #   name        — название в меню
@@ -10,134 +11,161 @@
 #   lore        — описание в меню
 #   permission  — право доступа; по умолчанию applecosmetic.crit.<id>,
 #                 пустая строка "" делает эффект доступным всем
-#   sounds      — звуки: { name: ключ, volume: громкость, pitch: высота }
-#   layers      — слои частиц
+#   sounds      — звуки: { name: ключ, volume: громкость, pitch: высота, delay: задержка в тиках }
+#   layers      — слои спрайтов
 #
-# Параметры слоёв (animation, particle, amount, radius, height, y-offset, duration,
-# delay, speed, color, size, rainbow, material) подробно описаны в effects/kill.yml.
-# Здесь уместны короткие эффекты: критические удары случаются часто.
+# Параметры слоёв (animation, sprite, frames, amount, size, radius, height, y-offset, duration,
+# delay, interval, spin, color, rainbow) подробно описаны в effects/kill.yml.
+# Здесь уместны короткие эффекты из нескольких спрайтов: критические удары случаются часто.
+
+# Служебная версия файла — не меняйте. Когда формат обновляется, плагин сохраняет
+# прежний файл рядом как crit.yml.vN.bak и кладёт на его место новый.
+file-version: 2
 
 effects:
   magic:
     name: "<gradient:#7df9ff:#4d9dff>Магический удар</gradient>"
-    icon: ENCHANTED_BOOK
+    icon: "model:applecosmetic:gui/crit_magic"
     lore:
-      - "<gray>Искры зачарованного клинка."
+      - "<#b5838a>Искры зачарованного клинка."
+    sounds:
+      - { name: block.enchantment_table.use, volume: 0.6, pitch: 1.6 }
     layers:
-      - { animation: BURST, particle: ENCHANTED_HIT, amount: 25, radius: 0.3, speed: 0.5 }
+      - { animation: POP, sprite: impact_purple, size: 1.3, duration: 8, y-offset: 1.2 }
+      - { animation: BURST, sprite: [spark_teal, spark_purple, glint_white], amount: 6, radius: 1.0, size: 0.35, duration: 12, y-offset: 1.2 }
+      - { animation: POP, sprite: [rune_a_teal, rune_b_teal, rune_c_teal], amount: 2, radius: 0.7, size: 0.5, duration: 12, y-offset: 1.5 }
 
   flame:
     name: "<gradient:#ffb347:#ff5f1f>Обжигающий удар</gradient>"
-    icon: FIRE_CHARGE
+    icon: "model:applecosmetic:gui/crit_flame"
     lore:
-      - "<gray>Удар оставляет языки пламени."
+      - "<#b5838a>Удар оставляет языки пламени."
+    sounds:
+      - { name: item.firecharge.use, volume: 0.5, pitch: 1.4 }
     layers:
-      - { animation: BURST, particle: FLAME, amount: 20, radius: 0.3, speed: 0.08 }
-      - { animation: BURST, particle: LAVA, amount: 4, radius: 0.2 }
+      - { animation: SLASH, sprite: slash_orange, size: 1.8, duration: 8, y-offset: 1.1 }
+      - { animation: BURST, sprite: flame_orange, amount: 6, radius: 0.9, size: 0.4, duration: 12, y-offset: 1.1 }
 
   frost:
     name: "<gradient:#e0f7ff:#7de8ff>Морозный удар</gradient>"
-    icon: SNOWBALL
+    icon: "model:applecosmetic:gui/crit_frost"
     lore:
-      - "<gray>Пробирает до костей."
+      - "<#b5838a>Пробирает до костей."
     sounds:
       - { name: block.powder_snow.break, volume: 1.0, pitch: 1.2 }
     layers:
-      - { animation: BURST, particle: SNOWFLAKE, amount: 25, radius: 0.35, speed: 0.08 }
+      - { animation: SLASH, sprite: slash_ice, size: 1.8, duration: 8, y-offset: 1.1 }
+      - { animation: BURST, sprite: [shard_ice, snow_ice], amount: 6, radius: 1.0, size: 0.38, duration: 12, y-offset: 1.1, fall: 0.5, spin: 10 }
 
   love:
     name: "<gradient:#ff8fab:#ff2e4d>Удар любви</gradient>"
-    icon: PINK_TULIP
+    icon: "model:applecosmetic:gui/crit_love"
     lore:
-      - "<gray>Бьёт — значит любит."
+      - "<#b5838a>Бьёт — значит любит."
     layers:
-      - { animation: BURST, particle: HEART, amount: 6, radius: 0.45, speed: 0.0 }
+      - { animation: POP, sprite: heart_red, size: 1.0, duration: 12, y-offset: 1.7 }
+      - { animation: BURST, sprite: [heart_pink, heart_red], amount: 5, radius: 0.9, size: 0.32, duration: 12, y-offset: 1.3 }
 
   shock:
     name: "<gradient:#fff59d:#ffd54f>Электрошок</gradient>"
-    icon: COPPER_INGOT
+    icon: "model:applecosmetic:gui/crit_shock"
     lore:
-      - "<gray>Разряд на кончике клинка."
+      - "<#b5838a>Разряд на кончике клинка."
+    sounds:
+      - { name: entity.bee.sting, volume: 0.6, pitch: 1.8 }
     layers:
-      - { animation: BURST, particle: ELECTRIC_SPARK, amount: 30, radius: 0.3, speed: 0.5 }
+      - { animation: POP, sprite: impact_gold, size: 1.2, duration: 6, y-offset: 1.2 }
+      - { animation: BURST, sprite: [bolt_gold, bolt_white], amount: 6, radius: 1.0, size: 0.42, duration: 10, y-offset: 1.2, spin: 20 }
 
   soul:
     name: "<gradient:#7df9ff:#3aa6b9>Удар души</gradient>"
-    icon: SOUL_TORCH
+    icon: "model:applecosmetic:gui/crit_soul"
     lore:
-      - "<gray>Холодное пламя душ."
+      - "<#b5838a>Холодное пламя душ."
+    sounds:
+      - { name: particle.soul_escape, volume: 1.2, pitch: 1.3 }
     layers:
-      - { animation: BURST, particle: SOUL_FIRE_FLAME, amount: 18, radius: 0.3, speed: 0.06 }
-      - { animation: BURST, particle: SOUL, amount: 4, radius: 0.3, speed: 0.03 }
+      - { animation: RISE, sprite: wisp_teal, size: 0.8, height: 0.9, duration: 14, y-offset: 1.2 }
+      - { animation: BURST, sprite: [dot_teal, glint_teal], amount: 6, radius: 0.9, size: 0.3, duration: 12, y-offset: 1.2 }
 
   melody:
     name: "<gradient:#a8ff78:#78ffd6>Мелодия боя</gradient>"
-    icon: NOTE_BLOCK
+    icon: "model:applecosmetic:gui/crit_melody"
     lore:
-      - "<gray>Каждый удар — в ноту."
+      - "<#b5838a>Каждый удар — в ноту."
     sounds:
       - { name: block.note_block.bell, volume: 0.8, pitch: 1.5 }
     layers:
-      - { animation: BURST, particle: NOTE, amount: 8, radius: 0.5, speed: 1.0 }
+      - { animation: RISE, sprite: [note_pink, note2_teal, note_gold, note2_lime], amount: 4, radius: 0.6, height: 0.9, size: 0.45, duration: 14, y-offset: 1.3, interval: 1 }
 
   slime:
     name: "<gradient:#a8ff78:#56ab2f>Слизневый шлепок</gradient>"
-    icon: SLIME_BALL
+    icon: "model:applecosmetic:gui/crit_slime"
     lore:
-      - "<gray>Звучит так же, как выглядит."
+      - "<#b5838a>Звучит так же, как выглядит."
     sounds:
       - { name: entity.slime.squish, volume: 0.8, pitch: 1.2 }
     layers:
-      - { animation: BURST, particle: ITEM_SLIME, amount: 30, radius: 0.3, speed: 0.1 }
+      - { animation: POP, sprite: splat_lime, size: 1.3, duration: 10, y-offset: 1.1 }
+      - { animation: BURST, sprite: drop_lime, amount: 6, radius: 0.9, size: 0.35, duration: 12, y-offset: 1.1, fall: 0.9 }
 
   blood:
     name: "<gradient:#ff4b4b:#a80000>Кровавый удар</gradient>"
-    icon: REDSTONE
+    icon: "model:applecosmetic:gui/crit_blood"
     lore:
-      - "<gray>Без лишних сантиментов."
+      - "<#b5838a>Без лишних сантиментов."
     layers:
-      - { animation: BURST, particle: BLOCK, material: REDSTONE_BLOCK, amount: 40, radius: 0.3, speed: 0.1 }
+      - { animation: SLASH, sprite: claw_blood, size: 1.7, duration: 8, y-offset: 1.1 }
+      - { animation: BURST, sprite: drop_blood, amount: 6, radius: 0.9, size: 0.32, duration: 12, y-offset: 1.1, fall: 0.9 }
 
   stars:
     name: "<gradient:#ffffff:#ffe9a8>Звёздный удар</gradient>"
-    icon: NETHER_STAR
+    icon: "model:applecosmetic:gui/crit_stars"
     lore:
-      - "<gray>Искры летят во все стороны."
+      - "<#b5838a>Искры летят во все стороны."
+    sounds:
+      - { name: block.amethyst_block.chime, volume: 0.8, pitch: 1.6 }
     layers:
-      - { animation: BURST, particle: END_ROD, amount: 20, radius: 0.2, speed: 0.12 }
+      - { animation: POP, sprite: star_gold, size: 0.9, duration: 10, y-offset: 1.3, spin: 10 }
+      - { animation: BURST, sprite: [star_gold, star_white, glint_gold], amount: 6, radius: 1.1, size: 0.35, duration: 12, y-offset: 1.2, spin: 14 }
 
   ink:
     name: "<gradient:#b8c6db:#6b7a8f>Чернильное пятно</gradient>"
-    icon: INK_SAC
+    icon: "model:applecosmetic:gui/crit_ink"
     lore:
-      - "<gray>Клякса на репутации врага."
+      - "<#b5838a>Клякса на репутации врага."
     sounds:
       - { name: entity.squid.squirt, volume: 0.8, pitch: 1.2 }
     layers:
-      - { animation: BURST, particle: SQUID_INK, amount: 20, radius: 0.3, speed: 0.08 }
+      - { animation: POP, sprite: splat_ink, size: 1.4, duration: 12, y-offset: 1.1, glow: false }
+      - { animation: BURST, sprite: drop_ink, amount: 6, radius: 0.9, size: 0.34, duration: 12, y-offset: 1.1, fall: 0.9, glow: false }
 
   rainbow:
     name: "<rainbow>Радужный удар</rainbow>"
-    icon: PRISMARINE_CRYSTALS
+    icon: "model:applecosmetic:gui/crit_rainbow"
     lore:
-      - "<gray>Все цвета в одном ударе."
+      - "<#b5838a>Все цвета в одном ударе."
     layers:
-      - { animation: SPHERE, particle: DUST, rainbow: true, size: 1.2, amount: 24, radius: 0.9, duration: 4 }
+      - { animation: POP, sprite: impact_white, rainbow: true, size: 1.2, duration: 8, y-offset: 1.2 }
+      - { animation: BURST, sprite: spark_white, rainbow: true, amount: 8, radius: 1.1, size: 0.38, duration: 12, y-offset: 1.2 }
 
   rage:
     name: "<gradient:#ff6b6b:#c9184a>Ярость</gradient>"
-    icon: RED_DYE
+    icon: "model:applecosmetic:gui/crit_rage"
     lore:
-      - "<gray>Вы сегодня не в духе."
+      - "<#b5838a>Вы сегодня не в духе."
     layers:
-      - { animation: BURST, particle: ANGRY_VILLAGER, amount: 5, radius: 0.5, speed: 0.0 }
+      - { animation: SLASH, sprite: slash_red, size: 1.6, duration: 7, y-offset: 1.1 }
+      - { animation: POP, sprite: anger_red, size: 0.9, duration: 12, y-offset: 2.1 }
+      - { animation: BURST, sprite: [spark_red, dot_red], amount: 5, radius: 0.8, size: 0.3, duration: 10, y-offset: 1.2 }
 
   sonic:
     name: "<gradient:#4dd2ff:#1b6ca8>Звуковая волна</gradient>"
-    icon: ECHO_SHARD
+    icon: "model:applecosmetic:gui/crit_sonic"
     lore:
-      - "<gray>Отголосок древних глубин."
+      - "<#b5838a>Отголосок древних глубин."
     sounds:
       - { name: entity.warden.sonic_boom, volume: 0.4, pitch: 1.5 }
     layers:
-      - { animation: BURST, particle: SONIC_BOOM, amount: 1, radius: 0.0, speed: 0.0 }
+      - { animation: WAVE, sprite: halo_teal, amount: 3, size: 2.2, duration: 9, interval: 3, y-offset: 1.2 }
+      - { animation: BURST, sprite: glint_teal, amount: 4, radius: 0.9, size: 0.3, duration: 10, y-offset: 1.2 }
