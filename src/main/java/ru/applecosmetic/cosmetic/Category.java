@@ -12,6 +12,7 @@ public enum Category {
     KILL("kill", "effects/kill.yml", "effects", Kind.EFFECT, Material.WITHER_SKELETON_SKULL),
     CRIT("crit", "effects/crit.yml", "effects", Kind.EFFECT, Material.BLAZE_POWDER),
     PROJECTILE("projectile", "effects/projectile.yml", "effects", Kind.TRAIL, Material.BOW),
+    FIREWORK("firework", "effects/firework.yml", "effects", Kind.TRAIL, Material.FIREWORK_ROCKET),
     DEATH("death", "effects/death.yml", "effects", Kind.EFFECT, Material.SKELETON_SKULL);
 
     public enum Kind {
@@ -19,9 +20,9 @@ public enum Category {
         SKIN,
         /** Шляпа на голове. */
         HAT,
-        /** Разовый эффект из частиц. */
+        /** Разовый эффект из спрайтов. */
         EFFECT,
-        /** След за снарядом. */
+        /** След за снарядом или ракетой и необязательный эффект в конце полёта. */
         TRAIL
     }
 

@@ -7,17 +7,14 @@ import java.util.function.Consumer;
 import org.bukkit.configuration.ConfigurationSection;
 import ru.applecosmetic.util.Params;
 
-/** Разовый эффект: слои частиц, звуки, молния и фейерверк. */
-public record EffectDefinition(
-        List<EffectLayer> layers,
-        List<SoundSpec> sounds,
-        boolean lightning,
-        FireworkSpec firework) {
+/** Разовый эффект: слои спрайтов и звуки. */
+public record EffectDefinition(List<EffectLayer> layers, List<SoundSpec> sounds) {
 
-    public static EffectDefinition parse(ConfigurationSection section, Consumer<String> warn) {
+    public static EffectDefinition parse(ConfigurationSection section, SpriteSpec.Source source,
+                                         Consumer<String> warn) {
         List<EffectLayer> layers = new ArrayList<>();
         for (Map<?, ?> entry : section.getMapList("layers")) {
-            EffectLayer layer = EffectLayer.parse(Params.of(entry), warn);
+            EffectLayer layer = EffectLayer.parse(Params.of(entry), source, warn);
             if (layer != null) {
                 layers.add(layer);
             }
@@ -37,22 +34,16 @@ public record EffectDefinition(
                 }
             }
         }
-        Object firework = section.get("firework");
-        return new EffectDefinition(List.copyOf(layers), List.copyOf(sounds),
-                section.getBoolean("lightning", false),
-                firework == null ? null : FireworkSpec.parse(Params.of(firework), warn));
+        for (String removed : List.of("lightning", "firework")) {
+            if (section.isSet(removed)) {
+                warn.accept("поле «" + removed + "» больше не используется: молния и салют собираются"
+                        + " из спрайтов в layers");
+            }
+        }
+        return new EffectDefinition(List.copyOf(layers), List.copyOf(sounds));
     }
 
     public boolean isEmpty() {
-        return layers.isEmpty() && sounds.isEmpty() && !lightning && firework == null;
-    }
-
-    /** Сколько тиков длится эффект. */
-    public int ticks() {
-        int ticks = 0;
-        for (EffectLayer layer : layers) {
-            ticks = Math.max(ticks, layer.delay() + layer.duration());
-        }
-        return ticks;
+        return layers.isEmpty() && sounds.isEmpty();
     }
 }

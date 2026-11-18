@@ -13,7 +13,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.plugin.Plugin;
 
 /**
- * Устанавливает встроенные 3D-модели: набор предметов в ItemsAdder и модели шляп в BetterModel.
+ * Устанавливает встроенный набор: модели, спрайты эффектов и текстуры меню в ItemsAdder,
+ * модели шляп в BetterModel.
  * Копируются только недостающие файлы, поэтому правки администратора не затираются.
  */
 public final class PackInstaller {
@@ -38,8 +39,9 @@ public final class PackInstaller {
     public void install(boolean beforeEnable) {
         int items = copy("ItemsAdder", ITEMS_ADDER, "contents");
         if (items > 0) {
-            logger.info("Модели AppleCosmetic добавлены в ItemsAdder (contents/applecosmetic, файлов: " + items
-                    + "). Выполните /iazip, чтобы они попали в ресурспак.");
+            logger.info("Набор AppleCosmetic добавлен в ItemsAdder (contents/applecosmetic и"
+                    + " contents/applecosmetic_raw, файлов: " + items
+                    + "). Выполните /iazip, чтобы он попал в ресурспак.");
         }
         int hats = copy("BetterModel", BETTER_MODEL, "models");
         if (hats > 0) {

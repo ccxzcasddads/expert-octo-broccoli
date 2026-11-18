@@ -12,6 +12,7 @@ import java.util.function.Consumer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.YamlConfiguration;
 import ru.applecosmetic.AppleCosmeticPlugin;
+import ru.applecosmetic.FileUpdater;
 import ru.applecosmetic.effect.EffectDefinition;
 import ru.applecosmetic.effect.TrailDefinition;
 import ru.applecosmetic.item.ItemResolver;
@@ -49,6 +50,7 @@ public final class CosmeticRegistry {
 
     private Map<String, Cosmetic> loadCategory(Category category) {
         Map<String, Cosmetic> result = new LinkedHashMap<>();
+        FileUpdater.update(plugin, category.file());
         File file = new File(plugin.getDataFolder(), category.file());
         if (!file.exists()) {
             plugin.saveResource(category.file(), false);
@@ -117,9 +119,9 @@ public final class CosmeticRegistry {
                 }
             }
             case EFFECT -> {
-                effect = EffectDefinition.parse(section, warn);
+                effect = EffectDefinition.parse(section, plugin.spriteCatalog(), warn);
                 if (effect.isEmpty()) {
-                    warn.accept("эффект пуст: добавьте layers, sounds, lightning или firework");
+                    warn.accept("эффект пуст: добавьте layers или sounds");
                     return null;
                 }
             }
@@ -129,10 +131,13 @@ public final class CosmeticRegistry {
                     warn.accept("не указан след (trail)");
                     return null;
                 }
-                trail = TrailDefinition.parse(Params.of(raw), warn);
+                trail = TrailDefinition.parse(Params.of(raw), plugin.spriteCatalog(), warn);
                 if (trail == null) {
                     return null;
                 }
+                // Необязательная вспышка в конце полёта: при попадании стрелы или взрыве ракеты.
+                EffectDefinition finale = EffectDefinition.parse(section, plugin.spriteCatalog(), warn);
+                effect = finale.isEmpty() ? null : finale;
             }
         }
         icons.forEach(icon -> resolver.check(icon, warn));

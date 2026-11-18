@@ -1,12 +1,12 @@
 package ru.applecosmetic.effect;
 
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
-import org.bukkit.NamespacedKey;
-import org.bukkit.SoundCategory;
 import org.bukkit.World;
 import org.bukkit.entity.ArmorStand;
-import org.bukkit.entity.Firework;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Mob;
 import org.bukkit.entity.Player;
@@ -15,9 +15,6 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDeathEvent;
-import org.bukkit.inventory.meta.FireworkMeta;
-import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.scheduler.BukkitRunnable;
 import ru.applecosmetic.AppleCosmeticPlugin;
 import ru.applecosmetic.Settings;
 import ru.applecosmetic.cosmetic.Category;
@@ -27,11 +24,10 @@ import ru.applecosmetic.cosmetic.Cosmetic;
 public final class EffectService implements Listener {
 
     private final AppleCosmeticPlugin plugin;
-    private final NamespacedKey fireworkKey;
+    private final Map<UUID, Integer> lastCrit = new HashMap<>();
 
     public EffectService(AppleCosmeticPlugin plugin) {
         this.plugin = plugin;
-        this.fireworkKey = new NamespacedKey(plugin, "firework");
     }
 
     /**
@@ -46,67 +42,15 @@ public final class EffectService implements Listener {
         for (SoundSpec sound : effect.sounds()) {
             sound.play(origin, only);
         }
-        if (effect.lightning()) {
-            if (only == null) {
-                world.strikeLightningEffect(origin);
-            } else {
-                // Молнию нельзя показать одному игроку, поэтому в предпросмотре только гром.
-                only.playSound(origin, "entity.lightning_bolt.thunder", SoundCategory.WEATHER, 1.0f, 1.0f);
-                only.playSound(origin, "entity.lightning_bolt.impact", SoundCategory.WEATHER, 1.0f, 1.0f);
-            }
-        }
-        if (effect.firework() != null) {
-            launch(effect.firework(), origin, only);
-        }
-        if (effect.layers().isEmpty()) {
-            return;
-        }
-
-        Animation.Frame frame = new Animation.Frame(world, only == null ? null : List.of(only),
+        Animation.Scene scene = new Animation.Scene(plugin.sprites(), world, only,
                 origin.getX(), origin.getY(), origin.getZ());
-        int total = effect.ticks();
-        new BukkitRunnable() {
-            private int tick;
-
-            @Override
-            public void run() {
-                try {
-                    for (EffectLayer layer : effect.layers()) {
-                        int local = tick - layer.delay();
-                        if (local >= 0 && local < layer.duration()) {
-                            frame.tick = local;
-                            frame.progress = (local + 1.0) / layer.duration();
-                            layer.animation().render(layer, frame);
-                        }
-                    }
-                } catch (RuntimeException e) {
-                    plugin.getLogger().warning("Эффект остановлен из-за ошибки: " + e);
-                    cancel();
-                    return;
-                }
-                if (++tick >= total) {
-                    cancel();
-                }
-            }
-        }.runTaskTimer(plugin, 0L, 1L);
+        for (EffectLayer layer : effect.layers()) {
+            layer.animation().start(layer, scene);
+        }
     }
 
-    private void launch(FireworkSpec spec, Location origin, Player only) {
-        Location at = origin.clone().add(0, 1.2, 0);
-        Firework firework = at.getWorld().spawn(at, Firework.class, spawned -> {
-            FireworkMeta meta = spawned.getFireworkMeta();
-            meta.addEffect(spec.effect());
-            spawned.setFireworkMeta(meta);
-            spawned.setSilent(true);
-            spawned.getPersistentDataContainer().set(fireworkKey, PersistentDataType.BYTE, (byte) 1);
-            if (only != null) {
-                spawned.setVisibleByDefault(false);
-            }
-        });
-        if (only != null) {
-            only.showEntity(plugin, firework);
-        }
-        firework.detonate();
+    public void forget(UUID id) {
+        lastCrit.remove(id);
     }
 
     private void playSelected(Player owner, Category category, Location at) {
@@ -142,16 +86,16 @@ public final class EffectService implements Listener {
             return;
         }
         Settings settings = plugin.settings();
-        if (victim instanceof Player ? settings.critOnPlayers() : settings.critOnMobs()) {
-            playSelected(attacker, Category.CRIT, victim.getLocation());
+        if (!(victim instanceof Player ? settings.critOnPlayers() : settings.critOnMobs())) {
+            return;
         }
-    }
-
-    @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
-    public void onFireworkDamage(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Firework firework
-                && firework.getPersistentDataContainer().has(fireworkKey)) {
-            event.setCancelled(true);
+        // Без паузы частые удары (например, на серверах со старым боем) засыпали бы цель спрайтами.
+        int now = Bukkit.getCurrentTick();
+        Integer last = lastCrit.get(attacker.getUniqueId());
+        if (last != null && now - last < settings.critCooldown()) {
+            return;
         }
+        lastCrit.put(attacker.getUniqueId(), now);
+        playSelected(attacker, Category.CRIT, victim.getLocation());
     }
 }

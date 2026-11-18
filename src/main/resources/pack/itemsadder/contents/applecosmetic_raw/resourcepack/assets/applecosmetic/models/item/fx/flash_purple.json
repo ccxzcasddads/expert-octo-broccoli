@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "applecosmetic:item/fx/flash_purple"
+ }
+}

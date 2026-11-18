@@ -1,0 +1,100 @@
+{
+ "providers": [
+  {
+   "type": "space",
+   "advances": {
+    "\ue000": -8
+   }
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/main.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue001"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/sword.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue010"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/pickaxe.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue011"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/totem.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue012"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/hat.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue013"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/kill.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue014"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/crit.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue015"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/projectile.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue016"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/firework.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue017"
+   ]
+  },
+  {
+   "type": "bitmap",
+   "file": "applecosmetic:font/menu/death.png",
+   "height": 228,
+   "ascent": 37,
+   "chars": [
+    "\ue018"
+   ]
+  }
+ ]
+}

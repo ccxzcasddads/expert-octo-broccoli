@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:item/generated",
+ "textures": {
+  "layer0": "applecosmetic:item/gui/death_smoke_bomb"
+ }
+}

@@ -9,6 +9,7 @@ import java.util.function.BiConsumer;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.entity.Player;
@@ -60,7 +61,7 @@ public final class MenuManager implements Listener {
                     "selected", selected == null ? plugin.messages().raw("none") : selected.name(),
                     "owned", String.valueOf(cosmetics.owned(player, category)),
                     "total", String.valueOf(plugin.registry().list(category).size()));
-            menu.set(button.getInt("slot", -1), icon, (clicker, click) -> {
+            place(menu, button, icon, (clicker, click) -> {
                 sound(clicker, "click");
                 openCategory(clicker, category, 0);
             });
@@ -68,7 +69,7 @@ public final class MenuManager implements Listener {
 
         ConfigurationSection reset = config.getConfigurationSection("reset");
         if (reset != null) {
-            menu.set(reset.getInt("slot", -1), button(reset, Material.BARRIER), (clicker, click) -> {
+            place(menu, reset, button(reset, Material.BARRIER), (clicker, click) -> {
                 if (plugin.cosmetics().resetAll(clicker)) {
                     sound(clicker, "unselect");
                     plugin.messages().send(clicker, "reset-all");
@@ -81,7 +82,7 @@ public final class MenuManager implements Listener {
         }
         ConfigurationSection close = config.getConfigurationSection("close");
         if (close != null) {
-            menu.set(close.getInt("slot", -1), button(close, Material.OAK_DOOR), (clicker, click) -> {
+            place(menu, close, button(close, Material.OAK_DOOR), (clicker, click) -> {
                 sound(clicker, "click");
                 clicker.closeInventory();
             });
@@ -99,6 +100,7 @@ public final class MenuManager implements Listener {
 
         String title = Text.replace(config.getString("title", "{category}"),
                 "category", plugin.cosmetics().title(category),
+                "background", section("menu.main.categories." + category.key()).getString("background", ""),
                 "page", String.valueOf(page + 1),
                 "pages", String.valueOf(pages));
         Menu menu = new Menu(rows, Text.parse(title));
@@ -152,14 +154,14 @@ public final class MenuManager implements Listener {
         String currentName = current == null ? plugin.messages().raw("none") : current.name();
         ConfigurationSection back = config.getConfigurationSection("back");
         if (back != null) {
-            menu.set(back.getInt("slot", -1), button(back, Material.ARROW), (clicker, click) -> {
+            place(menu, back, button(back, Material.ARROW), (clicker, click) -> {
                 sound(clicker, "click");
                 openMain(clicker);
             });
         }
         ConfigurationSection unequip = config.getConfigurationSection("unequip");
         if (unequip != null) {
-            menu.set(unequip.getInt("slot", -1), button(unequip, Material.BARRIER, "selected", currentName),
+            place(menu, unequip, button(unequip, Material.BARRIER, "selected", currentName),
                     (clicker, click) -> {
                         Cosmetic worn = plugin.cosmetics().selected(clicker, category);
                         if (plugin.cosmetics().unselect(clicker, category)) {
@@ -176,14 +178,16 @@ public final class MenuManager implements Listener {
         }
         ConfigurationSection previous = config.getConfigurationSection("previous");
         if (previous != null && page > 0) {
-            menu.set(previous.getInt("slot", -1), button(previous, Material.ARROW), (clicker, click) -> {
+            place(menu, previous, button(previous, Material.ARROW, "page", String.valueOf(page),
+                    "pages", String.valueOf(pages)), (clicker, click) -> {
                 sound(clicker, "click");
                 openCategory(clicker, category, page - 1);
             });
         }
         ConfigurationSection next = config.getConfigurationSection("next");
         if (next != null && page < pages - 1) {
-            menu.set(next.getInt("slot", -1), button(next, Material.ARROW), (clicker, click) -> {
+            place(menu, next, button(next, Material.ARROW, "page", String.valueOf(page + 2),
+                    "pages", String.valueOf(pages)), (clicker, click) -> {
                 sound(clicker, "click");
                 openCategory(clicker, category, page + 1);
             });
@@ -218,7 +222,7 @@ public final class MenuManager implements Listener {
         player.closeInventory();
         plugin.messages().send(player, "preview", "name", cosmetic.name());
         if (cosmetic.trail() != null) {
-            plugin.trails().preview(player, cosmetic.trail());
+            plugin.trails().preview(player, cosmetic);
         } else if (cosmetic.effect() != null) {
             Location origin = player.getLocation().add(TrailService.forward(player).multiply(3));
             plugin.effects().play(cosmetic.effect(), origin, player);
@@ -241,6 +245,19 @@ public final class MenuManager implements Listener {
                 config.getStringList("lore"), false, placeholders);
     }
 
+    /** Ставит кнопку в слот slot или сразу в несколько слотов slots, если она нарисована на фоне. */
+    private static void place(Menu menu, ConfigurationSection config, ItemStack item,
+                              BiConsumer<Player, ClickType> action) {
+        List<Integer> slots = config.getIntegerList("slots");
+        if (slots.isEmpty()) {
+            menu.set(config.getInt("slot", -1), item, action);
+            return;
+        }
+        for (int slot : slots) {
+            menu.set(slot, item, action);
+        }
+    }
+
     private static List<String> one(String spec) {
         return spec == null || spec.isBlank() ? List.of() : List.of(spec);
     }
@@ -253,10 +270,14 @@ public final class MenuManager implements Listener {
             item = new ItemStack(fallback);
         }
         item.setAmount(1);
+        NamespacedKey tooltip = plugin.settings().menuTooltipStyle();
         item.editMeta(meta -> {
-            meta.displayName(Text.item(Text.replace(name, placeholders)));
+            meta.displayName(Text.name(Text.replace(name, placeholders)));
             meta.lore(lore.stream().map(line -> Text.item(Text.replace(line, placeholders))).toList());
             meta.addItemFlags(ItemFlag.values());
+            if (tooltip != null) {
+                meta.setTooltipStyle(tooltip);
+            }
             if (glint) {
                 meta.setEnchantmentGlintOverride(true);
             }

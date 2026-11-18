@@ -1,0 +1,12 @@
+{
+ "model": {
+  "type": "minecraft:model",
+  "model": "applecosmetic:item/fx/slash_ice",
+  "tints": [
+   {
+    "type": "minecraft:dye",
+    "default": 16777215
+   }
+  ]
+ }
+}

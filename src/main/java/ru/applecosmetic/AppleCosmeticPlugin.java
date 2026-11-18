@@ -13,6 +13,8 @@ import ru.applecosmetic.cosmetic.CosmeticManager;
 import ru.applecosmetic.cosmetic.CosmeticRegistry;
 import ru.applecosmetic.data.PlayerDataStore;
 import ru.applecosmetic.effect.EffectService;
+import ru.applecosmetic.effect.SpriteCatalog;
+import ru.applecosmetic.effect.SpriteEngine;
 import ru.applecosmetic.effect.TrailService;
 import ru.applecosmetic.hat.HatService;
 import ru.applecosmetic.item.ItemResolver;
@@ -32,6 +34,8 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
     private PlayerDataStore store;
     private SkinService skins;
     private HatService hats;
+    private SpriteCatalog spriteCatalog;
+    private SpriteEngine sprites;
     private EffectService effects;
     private TrailService trails;
     private MenuManager menus;
@@ -39,6 +43,7 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
     @Override
     public void onLoad() {
         // До включения ItemsAdder и BetterModel, чтобы они увидели модели уже при этом запуске.
+        FileUpdater.update(this, "config.yml");
         saveDefaultConfig();
         installModels(true);
     }
@@ -47,6 +52,8 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
     public void onEnable() {
         messages = new Messages(this);
         items = new ItemResolver(this);
+        spriteCatalog = new SpriteCatalog(getFile(), getDataFolder().getParentFile(), items, getLogger());
+        sprites = new SpriteEngine(this);
         registry = new CosmeticRegistry(this);
         cosmetics = new CosmeticManager(this);
         store = new PlayerDataStore(this);
@@ -91,6 +98,7 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
         skins.restoreAll();
         hats.clearAll();
         trails.clear();
+        sprites.clear();
         store.shutdown();
     }
 
@@ -104,6 +112,7 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
     }
 
     private void loadConfiguration() {
+        FileUpdater.update(this, "config.yml");
         saveDefaultConfig();
         reloadConfig();
         settings.load(getConfig(), getLogger());
@@ -127,6 +136,7 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
         tasks.add(Bukkit.getScheduler().runTaskTimer(this, () -> {
             skins.flushDirty();
             trails.tick();
+            sprites.tick();
         }, 1L, 1L));
         int skinInterval = settings.skinSyncInterval();
         tasks.add(Bukkit.getScheduler().runTaskTimer(this, () -> {
@@ -191,6 +201,14 @@ public final class AppleCosmeticPlugin extends JavaPlugin {
 
     public HatService hats() {
         return hats;
+    }
+
+    public SpriteCatalog spriteCatalog() {
+        return spriteCatalog;
+    }
+
+    public SpriteEngine sprites() {
+        return sprites;
     }
 
     public EffectService effects() {

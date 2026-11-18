@@ -36,6 +36,7 @@ public final class PlayerListener implements Listener {
         plugin.skins().restore(player);
         plugin.hats().remove(player);
         plugin.menus().forget(player.getUniqueId());
+        plugin.effects().forget(player.getUniqueId());
         plugin.store().unload(player.getUniqueId());
     }
 }
